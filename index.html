@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Pemantauan Kartu Fisik KKP — Jawa Timur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#0A1F33;
+    --navy-800:#123253;
+    --navy-700:#1B4066;
+    --paper:#F6F3EA;
+    --paper-dim:#EFEADC;
+    --ink:#211D18;
+    --ink-soft:#5B564C;
+    --line:#D9D0BB;
+    --gold:#AD7F26;
+    --gold-soft:#E7D9B4;
+    --green:#2F6F4E;
+    --green-bg:#E4EEE6;
+    --amber:#B0731C;
+    --amber-bg:#F3E7D2;
+    --blue:#2A5C8A;
+    --blue-bg:#E1EBF2;
+    --red:#A8402F;
+    --red-bg:#F3DFDA;
+    --grey:#7A7364;
+    --grey-bg:#EAE5D8;
+    --shadow: 0 1px 2px rgba(10,31,51,0.06), 0 6px 20px rgba(10,31,51,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--paper-dim) 1px, transparent 1px);
+    background-size: 100% 38px;
+  }
+  .serif{font-family:'Source Serif 4', serif;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  /* ===== Masthead ===== */
+  .masthead{
+    background: linear-gradient(155deg, var(--navy-950) 0%, var(--navy-800) 60%, var(--navy-700) 100%);
+    color:#F3EFE4;
+    padding: 28px 32px 26px;
+    position:relative;
+    overflow:hidden;
+    border-bottom: 4px solid var(--gold);
+  }
+  .masthead::after{
+    content:"";
+    position:absolute; inset:0;
+    background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 26px);
+    pointer-events:none;
+  }
+  .masthead-top{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:20px;
+    position:relative; z-index:1;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--gold-soft); margin:0 0 8px;
+  }
+  .masthead h1{
+    font-size: 27px; margin:0 0 6px; font-weight:600; letter-spacing:.01em;
+    max-width:640px; line-height:1.25;
+  }
+  .masthead p.sub{
+    margin:0; color:#C9CFD8; font-size:13.5px; max-width:560px;
+  }
+  .sync-box{
+    text-align:right; font-size:12px; color:#CBD2DC; min-width:210px;
+  }
+  .sync-row{display:flex; align-items:center; justify-content:flex-end; gap:7px; margin-bottom:8px;}
+  .dot{width:7px;height:7px;border-radius:50%; background:var(--grey); flex:none;}
+  .dot.live{background:#4FBE84; box-shadow:0 0 0 3px rgba(79,190,132,0.25); animation:pulse 2s infinite;}
+  .dot.err{background:#D9695C;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  #lastUpdated{font-family:'IBM Plex Mono',monospace; color:#EFE7D2;}
+  .sync-btns{display:flex; gap:8px; justify-content:flex-end; margin-top:10px;}
+  .btn{
+    font-family:'IBM Plex Sans',sans-serif; font-size:12px; font-weight:600;
+    border:1px solid rgba(255,255,255,0.28); background:rgba(255,255,255,0.06); color:#F3EFE4;
+    padding:7px 12px; border-radius:3px; cursor:pointer; transition:all .15s ease;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{background:rgba(255,255,255,0.16); border-color:rgba(255,255,255,0.5);}
+  .btn.active{background:var(--gold); border-color:var(--gold); color:#211D18;}
+  .btn svg{width:13px;height:13px;}
+
+  /* ===== Layout ===== */
+  .wrap{max-width:1360px; margin:0 auto; padding:26px 32px 60px;}
+
+  /* KPI strip */
+  .kpi-strip{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px;}
+  .kpi{
+    background:#fff; border:1px solid var(--line); border-radius:4px; padding:16px 16px 14px;
+    box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .kpi::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--kc, var(--gold));}
+  .kpi .num{font-family:'Source Serif 4',serif; font-size:29px; font-weight:700; color:var(--navy-950); line-height:1;}
+  .kpi .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:7px; text-transform:uppercase; letter-spacing:.05em;}
+  .kpi .sub{font-size:11px; color:var(--grey); margin-top:3px;}
+  @media (max-width:1050px){ .kpi-strip{grid-template-columns:repeat(2,1fr);} }
+
+  /* Filter bar */
+  .filter-bar{
+    background:#fff; border:1px solid var(--line); border-radius:4px;
+    padding:14px 18px; margin-bottom:22px; box-shadow:var(--shadow);
+    display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end;
+  }
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); font-weight:600;}
+  .field select, .field input[type="text"]{
+    font-family:'IBM Plex Sans',sans-serif; font-size:13px; padding:8px 10px;
+    border:1px solid var(--line); border-radius:3px; background:var(--paper); color:var(--ink);
+    min-width:170px;
+  }
+  .field input[type="text"]{min-width:220px;}
+  .field select:focus, .field input:focus{outline:2px solid var(--blue); outline-offset:1px;}
+  .reset-link{
+    font-size:12px; color:var(--blue); text-decoration:underline; cursor:pointer; background:none; border:none;
+    padding:8px 4px; font-family:'IBM Plex Sans',sans-serif;
+  }
+  .result-count{margin-left:auto; font-size:12px; color:var(--ink-soft); align-self:center;}
+
+  /* Two column: charts + register */
+  .grid{display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start;}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{background:#fff; border:1px solid var(--line); border-radius:4px; box-shadow:var(--shadow);}
+  .panel-head{
+    padding:13px 18px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-head h2{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0; font-weight:600; color:var(--navy-950);}
+  .panel-body{padding:16px 18px 18px;}
+
+  /* donut */
+  .donut-wrap{display:flex; align-items:center; gap:16px; margin-bottom:6px;}
+  .legend{list-style:none; margin:0; padding:0; font-size:12px; flex:1;}
+  .legend li{display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px dashed var(--line);}
+  .legend li:last-child{border-bottom:none;}
+  .sw{width:9px;height:9px;border-radius:2px; flex:none;}
+  .legend .lname{flex:1; color:var(--ink);}
+  .legend .lval{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);}
+
+  /* per bank bars */
+  .bank-rows{margin-top:14px;}
+  .bank-row{margin-bottom:11px;}
+  .bank-row .top{display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;}
+  .bank-row .top .bname{font-weight:600; color:var(--navy-950);}
+  .bank-row .top .bnum{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);}
+  .bar-track{height:7px; background:var(--paper-dim); border-radius:4px; overflow:hidden; border:1px solid var(--line);}
+  .bar-fill{height:100%; background:linear-gradient(90deg, var(--blue), var(--green)); border-radius:4px;}
+
+  /* register table */
+  .table-scroll{max-height:560px; overflow:auto; border-top:1px solid var(--line);}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    position:sticky; top:0; background:var(--navy-950); color:#EFE7D2; text-align:left;
+    padding:9px 12px; font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    white-space:nowrap; z-index:2;
+  }
+  tbody td{padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:nth-child(even){background:var(--paper-dim);}
+  tbody tr:hover{background:var(--blue-bg);}
+  td.mono, .kppn-code{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);}
+  .badge{
+    display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:600;
+    white-space:nowrap; letter-spacing:.01em;
+  }
+  .empty-row td{text-align:center; padding:40px 12px; color:var(--grey); font-size:13px;}
+
+  .foot-note{margin-top:18px; font-size:11.5px; color:var(--grey); line-height:1.6; border-top:1px dashed var(--line); padding-top:12px;}
+  .foot-note code{background:var(--paper-dim); padding:1px 5px; border-radius:3px; font-family:'IBM Plex Mono',monospace;}
+
+  .error-banner{
+    background:var(--red-bg); border:1px solid var(--red); color:var(--red);
+    padding:12px 16px; border-radius:4px; font-size:12.5px; margin-bottom:18px; display:none; line-height:1.6;
+  }
+  .error-banner.show{display:block;}
+  .error-banner strong{display:block; margin-bottom:3px;}
+
+  .loading-row{display:flex; align-items:center; gap:10px; padding:30px; color:var(--ink-soft); font-size:13px; justify-content:center;}
+  .spinner{width:15px;height:15px;border-radius:50%; border:2px solid var(--line); border-top-color:var(--blue); animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .page-footer{
+    text-align:center; font-size:12px; color:var(--grey); letter-spacing:.02em;
+    padding:22px 20px 30px; border-top:1px dashed var(--line); margin-top:6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-top">
+    <div>
+      <p class="eyebrow">Monitoring Dokumen</p>
+      <h1 class="serif">Pemantauan Pembuatan Kartu Fisik KKP<br>Wilayah Kerja Kanwil DJPb Provinsi Jawa Timur</h1>
+    </div>
+    <div class="sync-box">
+      <div class="sync-row"><span class="dot" id="statusDot"></span><span id="statusText">Menghubungkan…</span></div>
+      <div>Pembaruan terakhir<br><span id="lastUpdated">—</span></div>
+      <div class="sync-btns">
+        <button class="btn" id="autoBtn">⟳ Auto-refresh: ON (5m)</button>
+        <button class="btn" id="refreshBtn">↻ Segarkan sekarang</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="error-banner" id="errorBanner">
+    <strong>Gagal mengambil data dari Google Sheets.</strong>
+    <span id="errorMsg"></span>
+  </div>
+
+  <div class="kpi-strip" id="kpiStrip">
+    <div class="kpi" style="--kc:var(--navy-700)"><div class="num" id="kpiTotal">–</div><div class="lbl">Total Pengajuan</div><div class="sub" id="kpiTotalSub">seluruh bank</div></div>
+    <div class="kpi" style="--kc:var(--blue)"><div class="num" id="kpiProses">–</div><div class="lbl">Dalam Proses</div><div class="sub">belum dikirim ke satker</div></div>
+    <div class="kpi" style="--kc:var(--red)"><div class="num" id="kpiKurang">–</div><div class="lbl">Dokumen Kurang</div><div class="sub">perlu tindak lanjut</div></div>
+    <div class="kpi" style="--kc:var(--green)"><div class="num" id="kpiSelesai">–</div><div class="lbl">Selesai</div><div class="sub">kartu diterima satker</div></div>
+    <div class="kpi" style="--kc:var(--gold)"><div class="num" id="kpiKppn">–</div><div class="lbl">KPPN Terlibat</div><div class="sub" id="kpiKppnSub">dari filter aktif</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="field">
+      <label for="fBank">Bank</label>
+      <select id="fBank"><option value="">Semua Bank</option></select>
+    </div>
+    <div class="field">
+      <label for="fKppn">KPPN</label>
+      <select id="fKppn"><option value="">Semua KPPN</option></select>
+    </div>
+    <div class="field">
+      <label for="fStatus">Status Pengajuan</label>
+      <select id="fStatus"><option value="">Semua Status</option></select>
+    </div>
+    <div class="field">
+      <label for="fSearch">Cari Satker / Nama</label>
+      <input type="text" id="fSearch" placeholder="ketik untuk mencari…">
+    </div>
+    <button class="reset-link" id="resetFilters">Atur ulang filter</button>
+    <span class="result-count" id="resultCount"></span>
+  </div>
+
+  <div class="grid">
+    <div class="left-col">
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-head"><h2>Sebaran Status</h2></div>
+        <div class="panel-body">
+          <div class="donut-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120" id="donutSvg"></svg>
+          </div>
+          <ul class="legend" id="statusLegend"></ul>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Progres per Bank</h2></div>
+        <div class="panel-body">
+          <div class="bank-rows" id="bankRows"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Register Pengajuan</h2>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Bank</th>
+              <th>KPPN</th>
+              <th>Satker</th>
+              <th>Pemegang KKP</th>
+              <th>No. Surat</th>
+              <th>Status</th>
+              <th>Catatan</th>
+            </tr>
+          </thead>
+          <tbody id="tblBody">
+            <tr><td colspan="7"><div class="loading-row"><div class="spinner"></div>Memuat data dari sumber…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="page-footer">dibuat oleh Bidang Supervisi KPPN dan Kepatuhan Internal Kanwil DJPb Provinsi Jawa Timur</footer>
+
+<script>
+const SHEET_ID = "1OX0Wsozkenqwp1uPf9aTprJdDl2wVNbd9L0hIaAyF-w";
+const BANK_SHEETS = ["BTN","BSI","BANK JATIM","BANK MANDIRI","BRI RO SURABAYA","BRI RO MALANG","BNI RO SURABAYA","BNI RO MALANG"];
+
+const STATUS_ORDER = [
+  "Diajukan",
+  "Berkas Diterima",
+  "Proses Verifikasi Berkas",
+  "Terverifikasi",
+  "Dikembalikan / Dokumen Kurang",
+  "Dikirim ke Kantor Pusat Bank",
+  "KKP Dikirim ke Satker",
+  "Selesai – Diterima Satker"
+];
+const STATUS_COLOR = {
+  "Diajukan": "var(--grey)",
+  "Berkas Diterima": "#7C90A8",
+  "Proses Verifikasi Berkas": "var(--blue)",
+  "Terverifikasi": "#4C8BB5",
+  "Dikembalikan / Dokumen Kurang": "var(--red)",
+  "Dikirim ke Kantor Pusat Bank": "var(--gold)",
+  "KKP Dikirim ke Satker": "#7A9E4A",
+  "Selesai – Diterima Satker": "var(--green)"
+};
+const STATUS_BADGE_BG = {
+  "Diajukan": "var(--grey-bg)",
+  "Berkas Diterima": "var(--grey-bg)",
+  "Proses Verifikasi Berkas": "var(--blue-bg)",
+  "Terverifikasi": "var(--blue-bg)",
+  "Dikembalikan / Dokumen Kurang": "var(--red-bg)",
+  "Dikirim ke Kantor Pusat Bank": "var(--amber-bg)",
+  "KKP Dikirim ke Satker": "var(--green-bg)",
+  "Selesai – Diterima Satker": "var(--green-bg)"
+};
+
+let RAW = [];        // all parsed application rows across banks
+let autoRefresh = true;
+let timer = null;
+
+function csvUrl(sheetName){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
+}
+
+// robust CSV parser (handles quoted fields, commas, embedded newlines)
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], n = text[i+1];
+    if(inQuotes){
+      if(c === '"' && n === '"'){ field+='"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else field += c;
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=""; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=""; }
+      else if(c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+function isTrue(v){ return typeof v === 'string' && v.trim().toUpperCase() === 'TRUE'; }
+
+function computeStatus(cols){
+  const nama = (cols[5]||"").trim();
+  if(!nama) return null; // empty template slot, not a real application
+
+  const diterima = isTrue(cols[21]);
+  const dikirimSatker = isTrue(cols[20]);
+  const tglKirimBank = (cols[18]||"").trim();
+  const catatan = (cols[17]||"").trim();
+  const dokKurang = (cols[16]||"").trim();
+  const hasilVerif = (cols[15]||"").trim();
+  const noSurat = (cols[6]||"").trim();
+  const checklistIdx = [8,10,11,12,13,14];
+  const checklistOn = checklistIdx.some(i => {
+    const v = (cols[i]||"").trim();
+    return v && v.toUpperCase() !== "FALSE";
+  });
+
+  if(diterima) return "Selesai – Diterima Satker";
+  if(dikirimSatker) return "KKP Dikirim ke Satker";
+  if(tglKirimBank) return "Dikirim ke Kantor Pusat Bank";
+  if(dokKurang || catatan) return "Dikembalikan / Dokumen Kurang";
+  if(hasilVerif) return "Terverifikasi";
+  if(checklistOn) return "Proses Verifikasi Berkas";
+  if(noSurat) return "Berkas Diterima";
+  return "Diajukan";
+}
+
+async function fetchBank(sheetName){
+  const res = await fetch(csvUrl(sheetName), {cache:"no-store"});
+  if(!res.ok) throw new Error(`HTTP ${res.status} pada tab "${sheetName}"`);
+  const text = await res.text();
+  const rows = parseCSV(text);
+  const out = [];
+  // skip header row (index 0)
+  for(let r=1; r<rows.length; r++){
+    const cols = rows[r];
+    if(!cols || cols.length < 6) continue;
+    const status = computeStatus(cols);
+    if(!status) continue;
+    out.push({
+      bank: sheetName,
+      kppnCode: (cols[1]||"").trim(),
+      kppn: (cols[2]||"").trim(),
+      satkerCode: (cols[3]||"").trim(),
+      satker: (cols[4]||"").trim(),
+      nama: (cols[5]||"").trim(),
+      noSurat: (cols[6]||"").trim(),
+      status,
+      catatan: (cols[17]||cols[16]||"").trim()
+    });
+  }
+  return out;
+}
+
+async function loadAll(){
+  setStatus("connecting");
+  const results = [];
+  let anyError = null;
+  for(const bank of BANK_SHEETS){
+    try{
+      const rows = await fetchBank(bank);
+      results.push(...rows);
+    }catch(err){
+      anyError = err;
+      console.error("Gagal memuat tab", bank, err);
+    }
+  }
+  if(results.length === 0 && anyError){
+    setStatus("error", anyError.message);
+    return;
+  }
+  RAW = results;
+  setStatus("live");
+  hideError();
+  if(anyError){
+    showError(`Sebagian tab gagal dimuat (${anyError.message}). Menampilkan data dari tab yang berhasil diambil.`);
+  }
+  populateFilterOptions();
+  render();
+  document.getElementById("lastUpdated").textContent = new Date().toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'medium'});
+}
+
+function setStatus(state, msg){
+  const dot = document.getElementById("statusDot");
+  const txt = document.getElementById("statusText");
+  dot.className = "dot";
+  if(state === "connecting"){ txt.textContent = "Menyinkronkan…"; }
+  else if(state === "live"){ dot.classList.add("live"); txt.textContent = "Tersambung — data langsung"; }
+  else if(state === "error"){ dot.classList.add("err"); txt.textContent = "Gagal tersambung"; showError(msg); }
+}
+
+function showError(msg){
+  const box = document.getElementById("errorBanner");
+  document.getElementById("errorMsg").textContent = msg + " Pastikan akses berbagi spreadsheet diatur ke \"Siapa saja yang memiliki tautan – Pelihat\", lalu tekan Segarkan sekarang.";
+  box.classList.add("show");
+}
+function hideError(){ document.getElementById("errorBanner").classList.remove("show"); }
+
+function populateFilterOptions(){
+  const bankSel = document.getElementById("fBank");
+  const kppnSel = document.getElementById("fKppn");
+  const statusSel = document.getElementById("fStatus");
+
+  const curBank = bankSel.value, curKppn = kppnSel.value, curStatus = statusSel.value;
+
+  bankSel.innerHTML = '<option value="">Semua Bank</option>' + BANK_SHEETS.map(b=>`<option value="${b}">${b}</option>`).join("");
+  bankSel.value = curBank;
+
+  const kppnSet = [...new Set(RAW.map(r=>r.kppn).filter(Boolean))].sort();
+  kppnSel.innerHTML = '<option value="">Semua KPPN</option>' + kppnSet.map(k=>`<option value="${k}">${k}</option>`).join("");
+  kppnSel.value = curKppn;
+
+  statusSel.innerHTML = '<option value="">Semua Status</option>' + STATUS_ORDER.map(s=>`<option value="${s}">${s}</option>`).join("");
+  statusSel.value = curStatus;
+}
+
+function getFiltered(){
+  const bank = document.getElementById("fBank").value;
+  const kppn = document.getElementById("fKppn").value;
+  const status = document.getElementById("fStatus").value;
+  const q = document.getElementById("fSearch").value.trim().toLowerCase();
+
+  return RAW.filter(r=>{
+    if(bank && r.bank !== bank) return false;
+    if(kppn && r.kppn !== kppn) return false;
+    if(status && r.status !== status) return false;
+    if(q && !(r.satker.toLowerCase().includes(q) || r.nama.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function render(){
+  const data = getFiltered();
+  renderKpis(data);
+  renderDonut(data);
+  renderBankRows();
+  renderTable(data);
+  document.getElementById("resultCount").textContent = `${data.length} pengajuan ditemukan`;
+}
+
+function renderKpis(data){
+  const total = data.length;
+  const selesai = data.filter(r=>r.status==="Selesai – Diterima Satker").length;
+  const kurang = data.filter(r=>r.status==="Dikembalikan / Dokumen Kurang").length;
+  const proses = total - selesai - kurang;
+  const kppnCount = new Set(data.map(r=>r.kppn)).size;
+
+  document.getElementById("kpiTotal").textContent = total;
+  document.getElementById("kpiTotalSub").textContent = document.getElementById("fBank").value ? document.getElementById("fBank").value : "seluruh bank";
+  document.getElementById("kpiProses").textContent = proses;
+  document.getElementById("kpiKurang").textContent = kurang;
+  document.getElementById("kpiSelesai").textContent = selesai;
+  document.getElementById("kpiKppn").textContent = kppnCount;
+  document.getElementById("kpiKppnSub").textContent = document.getElementById("fKppn").value ? "sesuai filter" : "dari filter aktif";
+
+}
+
+function renderDonut(data){
+  const svg = document.getElementById("donutSvg");
+  const legend = document.getElementById("statusLegend");
+  const counts = {};
+  STATUS_ORDER.forEach(s=>counts[s]=0);
+  data.forEach(r=>counts[r.status]++);
+  const total = data.length;
+
+  svg.innerHTML = "";
+  legend.innerHTML = "";
+
+  if(total === 0){
+    svg.innerHTML = `<circle cx="60" cy="60" r="48" fill="none" stroke="var(--line)" stroke-width="14"/>`;
+    legend.innerHTML = `<li style="border:none; color:var(--grey);">Belum ada data pada filter ini.</li>`;
+    return;
+  }
+
+  let angleStart = -90;
+  const r = 48, cx=60, cy=60;
+  const cssVal = (v)=> getComputedStyle(document.documentElement).getPropertyValue(v.replace('var(','').replace(')','')) || v;
+
+  STATUS_ORDER.forEach(s=>{
+    const val = counts[s];
+    if(val === 0) return;
+    const frac = val/total;
+    const angleEnd = angleStart + frac*360;
+    const large = (angleEnd-angleStart) > 180 ? 1 : 0;
+    const x1 = cx + r*Math.cos(angleStart*Math.PI/180);
+    const y1 = cy + r*Math.sin(angleStart*Math.PI/180);
+    const x2 = cx + r*Math.cos(angleEnd*Math.PI/180);
+    const y2 = cy + r*Math.sin(angleEnd*Math.PI/180);
+    const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+    const d = frac >= 0.999
+      ? `M ${cx-r} ${cy} A ${r} ${r} 0 1 1 ${cx+r} ${cy} A ${r} ${r} 0 1 1 ${cx-r} ${cy} Z`
+      : `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+    path.setAttribute("d", d);
+    path.setAttribute("fill", STATUS_COLOR[s]);
+    path.setAttribute("stroke", "#fff");
+    path.setAttribute("stroke-width","1.5");
+    svg.appendChild(path);
+    angleStart = angleEnd;
+
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="sw" style="background:${STATUS_COLOR[s]}"></span><span class="lname">${s}</span><span class="lval">${val}</span>`;
+    legend.appendChild(li);
+  });
+
+  const hole = document.createElementNS("http://www.w3.org/2000/svg","circle");
+  hole.setAttribute("cx",cx); hole.setAttribute("cy",cy); hole.setAttribute("r", 24);
+  hole.setAttribute("fill", "#fff");
+  svg.appendChild(hole);
+  const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+  txt.setAttribute("x",cx); txt.setAttribute("y",cy+4); txt.setAttribute("text-anchor","middle");
+  txt.setAttribute("font-family","IBM Plex Mono, monospace"); txt.setAttribute("font-size","13"); txt.setAttribute("font-weight","600");
+  txt.setAttribute("fill","var(--ink)");
+  txt.textContent = total;
+  svg.appendChild(txt);
+}
+
+function renderBankRows(){
+  const container = document.getElementById("bankRows");
+  container.innerHTML = "";
+  const activeKppn = document.getElementById("fKppn").value;
+  const activeStatus = document.getElementById("fStatus").value;
+  const q = document.getElementById("fSearch").value.trim().toLowerCase();
+
+  const maxCount = Math.max(1, ...BANK_SHEETS.map(b=> RAW.filter(r=>r.bank===b).length));
+
+  BANK_SHEETS.forEach(bank=>{
+    const rows = RAW.filter(r=>{
+      if(r.bank !== bank) return false;
+      if(activeKppn && r.kppn !== activeKppn) return false;
+      if(activeStatus && r.status !== activeStatus) return false;
+      if(q && !(r.satker.toLowerCase().includes(q) || r.nama.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    const done = rows.filter(r=>r.status==="Selesai – Diterima Satker").length;
+    const div = document.createElement("div");
+    div.className = "bank-row";
+    const widthPct = Math.round((rows.length/maxCount)*100);
+    div.innerHTML = `
+      <div class="top"><span class="bname">${bank}</span><span class="bnum">${done}/${rows.length}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${rows.length ? widthPct : 0}%"></div></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderTable(data){
+  const tbody = document.getElementById("tblBody");
+  if(data.length === 0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Tidak ada pengajuan yang cocok dengan filter saat ini.</td></tr>`;
+    return;
+  }
+  const sorted = [...data].sort((a,b)=> a.bank.localeCompare(b.bank) || a.kppn.localeCompare(b.kppn) || a.satker.localeCompare(b.satker));
+  tbody.innerHTML = sorted.map(r=>`
+    <tr>
+      <td>${r.bank}</td>
+      <td><span class="kppn-code">${r.kppnCode}</span> ${r.kppn}</td>
+      <td>${r.satker}<br><span class="mono">${r.satkerCode}</span></td>
+      <td>${r.nama}</td>
+      <td class="mono">${r.noSurat || "—"}</td>
+      <td><span class="badge" style="background:${STATUS_BADGE_BG[r.status]}; color:${STATUS_COLOR[r.status]}">${r.status}</span></td>
+      <td>${r.catatan ? r.catatan : "—"}</td>
+    </tr>
+  `).join("");
+}
+
+// ===== events =====
+["fBank","fKppn","fStatus"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", render);
+});
+document.getElementById("fSearch").addEventListener("input", ()=>{
+  clearTimeout(window._searchDeb);
+  window._searchDeb = setTimeout(render, 150);
+});
+document.getElementById("resetFilters").addEventListener("click", ()=>{
+  document.getElementById("fBank").value = "";
+  document.getElementById("fKppn").value = "";
+  document.getElementById("fStatus").value = "";
+  document.getElementById("fSearch").value = "";
+  render();
+});
+document.getElementById("refreshBtn").addEventListener("click", loadAll);
+document.getElementById("autoBtn").addEventListener("click", ()=>{
+  autoRefresh = !autoRefresh;
+  const btn = document.getElementById("autoBtn");
+  btn.textContent = autoRefresh ? "⟳ Auto-refresh: ON (5m)" : "⟳ Auto-refresh: OFF";
+  btn.classList.toggle("active", autoRefresh);
+  setupTimer();
+});
+
+function setupTimer(){
+  if(timer) clearInterval(timer);
+  if(autoRefresh){
+    timer = setInterval(loadAll, 5*60*1000); // every 5 minutes
+  }
+}
+
+document.getElementById("autoBtn").classList.add("active");
+loadAll();
+setupTimer();
+</script>
+</body>
+</html>
