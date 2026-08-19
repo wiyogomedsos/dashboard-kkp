@@ -1,0 +1,27 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# ============================================================
+# Role-based redirects (OPSIONAL) — nonaktif secara default.
+#
+# Proteksi utama data sudah ditangani oleh
+# netlify/functions/get-bank-data.mts (bekerja di semua plan Netlify).
+#
+# Blok di bawah ini contoh kalau nanti Anda ingin memisahkan dashboard
+# jadi halaman per-bank (mis. /bank/btn.html) dan mengunci halaman itu
+# di level edge Netlify. Fitur ini butuh plan Pro ke atas. Uncomment dan
+# sesuaikan path kalau dibutuhkan.
+# ============================================================
+
+# [[redirects]]
+#   from = "/bank/btn.html"
+#   to = "/bank/btn.html"
+#   status = 200
+#   force = true
+#   conditions = { Role = ["btn", "admin"] }
+#
+# [[redirects]]
+#   from = "/bank/btn.html"
+#   to = "/tidak-diizinkan.html"
+#   status = 302
