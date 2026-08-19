@@ -201,6 +201,31 @@
 </head>
 <body>
 
+<!-- ===== Login overlay ===== -->
+<div id="loginOverlay" style="
+  position:fixed; inset:0; z-index:100; background:var(--navy-950);
+  display:flex; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:6px; padding:32px 30px; width:100%; max-width:360px; box-shadow:0 20px 60px rgba(0,0,0,.35);">
+    <p style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin:0 0 6px;">Akses Terbatas</p>
+    <h2 class="serif" style="margin:0 0 4px; font-size:19px; color:var(--navy-950);">Masuk ke Dashboard KKP</h2>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;">Gunakan akun yang sudah didaftarkan oleh admin (Invite Only).</p>
+
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <input id="loginEmail" type="email" placeholder="Email" autocomplete="username"
+        style="padding:10px 12px; border:1px solid var(--line); border-radius:4px; font-family:'IBM Plex Sans',sans-serif; font-size:13.5px;">
+      <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password"
+        style="padding:10px 12px; border:1px solid var(--line); border-radius:4px; font-family:'IBM Plex Sans',sans-serif; font-size:13.5px;">
+      <button id="loginBtn" style="
+        padding:11px; border:none; border-radius:4px; background:var(--navy-950); color:#fff;
+        font-weight:600; font-size:13.5px; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;">
+        Masuk
+      </button>
+      <div id="loginStatus" style="font-size:12px; min-height:16px; color:var(--red);"></div>
+    </div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
 <div class="masthead">
   <div class="masthead-top">
     <div>
@@ -210,9 +235,11 @@
     <div class="sync-box">
       <div class="sync-row"><span class="dot" id="statusDot"></span><span id="statusText">Menghubungkan…</span></div>
       <div>Pembaruan terakhir<br><span id="lastUpdated">—</span></div>
+      <div id="roleInfo" style="margin-top:6px; font-size:11.5px; color:#CBD2DC;"></div>
       <div class="sync-btns">
         <button class="btn" id="autoBtn">⟳ Auto-refresh: ON (5m)</button>
         <button class="btn" id="refreshBtn">↻ Segarkan sekarang</button>
+        <button class="btn" id="logoutBtn">Keluar</button>
       </div>
     </div>
   </div>
@@ -300,10 +327,28 @@
 </div>
 
 <footer class="page-footer">dibuat oleh Bidang Supervisi KPPN dan Kepatuhan Internal Kanwil DJPb Provinsi Jawa Timur</footer>
+</div><!-- /#appRoot -->
 
-<script>
-const SHEET_ID = "1OX0Wsozkenqwp1uPf9aTprJdDl2wVNbd9L0hIaAyF-w";
-const BANK_SHEETS = ["BTN","BSI","BANK JATIM","BANK MANDIRI","BRI RO SURABAYA","BRI RO MALANG","BNI RO SURABAYA","BNI RO MALANG"];
+<script type="module">
+import { login, getUser, logout } from 'https://esm.sh/@netlify/identity@1';
+
+// Peta role -> nama tab bank. HARUS sama persis dengan nama tab & dengan
+// ROLE_TO_BANK di netlify/functions/get-bank-data.mts
+const ROLE_TO_BANK = {
+  btn: "BTN",
+  bri_surabaya: "BRI RO SURABAYA",
+  bri_malang: "BRI RO MALANG",
+  bni_surabaya: "BNI RO SURABAYA",
+  bni_malang: "BNI RO MALANG",
+  mandiri: "BANK MANDIRI",
+  jatim: "BANK JATIM",
+  bsi: "BSI",
+};
+const ALL_BANKS = Object.values(ROLE_TO_BANK);
+
+// Diisi setelah user login, berdasarkan role yang dimiliki.
+// 'admin' -> lihat semua bank. Role lain -> hanya bank miliknya sendiri.
+let BANK_SHEETS = [];
 
 const STATUS_ORDER = [
   "Diajukan",
@@ -341,7 +386,9 @@ let autoRefresh = true;
 let timer = null;
 
 function csvUrl(sheetName){
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
+  // Data TIDAK lagi diambil langsung dari Google Sheets di browser.
+  // Diarahkan ke Netlify Function yang memverifikasi role user dulu.
+  return `/.netlify/functions/get-bank-data?bank=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
 }
 
 // robust CSV parser (handles quoted fields, commas, embedded newlines)
@@ -396,7 +443,9 @@ function computeStatus(cols){
 }
 
 async function fetchBank(sheetName){
-  const res = await fetch(csvUrl(sheetName), {cache:"no-store"});
+  const res = await fetch(csvUrl(sheetName), {cache:"no-store", credentials:"include"});
+  if(res.status === 401){ showLoginOverlay(); throw new Error("Sesi berakhir, silakan login ulang."); }
+  if(res.status === 403){ throw new Error(`Anda tidak punya akses ke data "${sheetName}".`); }
   if(!res.ok) throw new Error(`HTTP ${res.status} pada tab "${sheetName}"`);
   const text = await res.text();
   const rows = parseCSV(text);
@@ -473,8 +522,11 @@ function populateFilterOptions(){
 
   const curBank = bankSel.value, curKppn = kppnSel.value, curStatus = statusSel.value;
 
-  bankSel.innerHTML = '<option value="">Semua Bank</option>' + BANK_SHEETS.map(b=>`<option value="${b}">${b}</option>`).join("");
-  bankSel.value = curBank;
+  if(!bankSel.disabled){
+    // hanya rebuild daftar opsi Bank kalau dropdown tidak dikunci (mis. role admin)
+    bankSel.innerHTML = '<option value="">Semua Bank</option>' + BANK_SHEETS.map(b=>`<option value="${b}">${b}</option>`).join("");
+    bankSel.value = curBank;
+  }
 
   const kppnSet = [...new Set(RAW.map(r=>r.kppn).filter(Boolean))].sort();
   kppnSel.innerHTML = '<option value="">Semua KPPN</option>' + kppnSet.map(k=>`<option value="${k}">${k}</option>`).join("");
@@ -665,8 +717,97 @@ function setupTimer(){
 }
 
 document.getElementById("autoBtn").classList.add("active");
-loadAll();
-setupTimer();
+
+// ===== Autentikasi (Netlify Identity) =====
+function showLoginOverlay(){
+  document.getElementById("loginOverlay").style.display = "flex";
+  document.getElementById("appRoot").style.display = "none";
+}
+function hideLoginOverlay(){
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("appRoot").style.display = "block";
+}
+
+function applyUserRole(user){
+  const roles = (user.app_metadata && user.app_metadata.roles) || [];
+  const isAdmin = roles.includes("admin");
+  BANK_SHEETS = isAdmin ? ALL_BANKS : roles.map(r => ROLE_TO_BANK[r]).filter(Boolean);
+
+  if(BANK_SHEETS.length === 0){
+    document.getElementById("loginStatus").textContent = "Akun Anda belum diberi role bank. Hubungi admin.";
+    document.getElementById("loginStatus").style.color = "var(--red)";
+    showLoginOverlay();
+    return false;
+  }
+
+  document.getElementById("roleInfo").textContent =
+    `Masuk sebagai: ${user.email} · Akses: ${isAdmin ? "Semua bank (admin)" : BANK_SHEETS.join(", ")}`;
+
+  const bankSel = document.getElementById("fBank");
+  if(isAdmin){
+    // admin tetap boleh pilih "Semua Bank" atau bank tertentu, dropdown tidak dikunci
+    bankSel.disabled = false;
+  } else {
+    // non-admin: dropdown dikunci ke bank miliknya sendiri
+    bankSel.innerHTML = `<option value="${BANK_SHEETS[0]}">${BANK_SHEETS[0]}</option>`;
+    bankSel.value = BANK_SHEETS[0];
+    bankSel.disabled = true;
+  }
+  return true;
+}
+
+async function startApp(user){
+  if(!applyUserRole(user)) return;
+  hideLoginOverlay();
+  await loadAll();
+  setupTimer();
+}
+
+document.getElementById("loginBtn").addEventListener("click", async ()=>{
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  const statusEl = document.getElementById("loginStatus");
+  statusEl.style.color = "var(--red)";
+  statusEl.textContent = "";
+  if(!email || !pass){
+    statusEl.textContent = "Isi email dan password.";
+    return;
+  }
+  try{
+    statusEl.style.color = "var(--ink-soft)";
+    statusEl.textContent = "Memverifikasi…";
+    const user = await login(email, pass);
+    statusEl.textContent = "";
+    await startApp(user);
+  }catch(err){
+    statusEl.style.color = "var(--red)";
+    statusEl.textContent = "Login gagal: " + (err.message || "periksa email/password Anda.");
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  if(timer) clearInterval(timer);
+  await logout();
+  RAW = [];
+  BANK_SHEETS = [];
+  document.getElementById("loginEmail").value = "";
+  document.getElementById("loginPass").value = "";
+  showLoginOverlay();
+});
+
+(async function initAuth(){
+  try{
+    const user = await getUser(); // baca cookie nf_jwt, null kalau belum login
+    if(user){
+      await startApp(user);
+    } else {
+      showLoginOverlay();
+    }
+  }catch(err){
+    console.error("Gagal cek sesi login:", err);
+    showLoginOverlay();
+  }
+})();
 </script>
 </body>
 </html>
