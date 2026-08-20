@@ -751,7 +751,10 @@ function applyUserRole(user){
   BANK_SHEETS = isAdmin ? ALL_BANKS : roles.map(r => ROLE_TO_BANK[r]).filter(Boolean);
 
   if(BANK_SHEETS.length === 0){
-    document.getElementById("loginStatus").textContent = "Akun Anda belum diberi role bank. Hubungi admin.";
+    document.getElementById("loginStatus").innerHTML =
+      "Akun Anda belum diberi role bank. Hubungi admin.<br>" +
+      "<span style='font-family:monospace; font-size:10px; color:#999; word-break:break-all;'>DEBUG app_metadata: " +
+      JSON.stringify(user.app_metadata || null) + "</span>";
     document.getElementById("loginStatus").style.color = "var(--red)";
     showLoginOverlay();
     return false;
