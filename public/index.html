@@ -751,10 +751,14 @@ function applyUserRole(user){
   BANK_SHEETS = isAdmin ? ALL_BANKS : roles.map(r => ROLE_TO_BANK[r]).filter(Boolean);
 
   if(BANK_SHEETS.length === 0){
+    let debugDump = "";
+    try{
+      debugDump = JSON.stringify(user, (k,v)=> k==="token" ? "[hidden]" : v);
+    }catch(e){ debugDump = "(gagal serialize: " + e.message + ")"; }
     document.getElementById("loginStatus").innerHTML =
       "Akun Anda belum diberi role bank. Hubungi admin.<br>" +
-      "<span style='font-family:monospace; font-size:10px; color:#999; word-break:break-all;'>DEBUG app_metadata: " +
-      JSON.stringify(user.app_metadata || null) + "</span>";
+      "<span style='font-family:monospace; font-size:9.5px; color:#999; word-break:break-all; display:block; max-height:120px; overflow:auto;'>DEBUG full user object: " +
+      debugDump + "</span>";
     document.getElementById("loginStatus").style.color = "var(--red)";
     showLoginOverlay();
     return false;
