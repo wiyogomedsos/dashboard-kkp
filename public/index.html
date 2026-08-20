@@ -273,7 +273,7 @@
     <div class="kpi" style="--kc:var(--navy-700)"><div class="num" id="kpiTotal">–</div><div class="lbl">Total Pengajuan</div><div class="sub" id="kpiTotalSub">seluruh bank</div></div>
     <div class="kpi" style="--kc:var(--blue)"><div class="num" id="kpiProses">–</div><div class="lbl">Dalam Proses</div><div class="sub">belum dikirim ke satker</div></div>
     <div class="kpi" style="--kc:var(--red)"><div class="num" id="kpiKurang">–</div><div class="lbl">Dokumen Kurang</div><div class="sub">perlu tindak lanjut</div></div>
-    <div class="kpi" style="--kc:var(--green)"><div class="num" id="kpiSelesai">–</div><div class="lbl">Selesai</div><div class="sub">kartu diterima satker</div></div>
+    <div class="kpi" style="--kc:var(--green)"><div class="num" id="kpiSelesai">–</div><div class="lbl">Selesai</div><div class="sub">KKP terkirim ke satker</div></div>
     <div class="kpi" style="--kc:var(--gold)"><div class="num" id="kpiKppn">–</div><div class="lbl">KPPN Terlibat</div><div class="sub" id="kpiKppnSub">dari filter aktif</div></div>
   </div>
 
@@ -375,8 +375,16 @@ const STATUS_ORDER = [
   "Terverifikasi",
   "Dikembalikan / Dokumen Kurang",
   "Dikirim ke Kantor Pusat Bank",
-  "KKP Dikirim ke Satker",
-  "Selesai – Diterima Satker"
+  "KKP Dikirim ke Satker"
+];
+// Subset yang ditampilkan di dropdown filter "Status Pengajuan" saja.
+// Diajukan / Proses Verifikasi Berkas / Terverifikasi tetap dihitung &
+// tetap muncul sebagai badge di tabel, hanya disembunyikan dari filter ini.
+const STATUS_FILTER_OPTIONS = [
+  "Berkas Diterima",
+  "Dikembalikan / Dokumen Kurang",
+  "Dikirim ke Kantor Pusat Bank",
+  "KKP Dikirim ke Satker"
 ];
 const STATUS_COLOR = {
   "Diajukan": "var(--grey)",
@@ -385,8 +393,7 @@ const STATUS_COLOR = {
   "Terverifikasi": "#4C8BB5",
   "Dikembalikan / Dokumen Kurang": "var(--red)",
   "Dikirim ke Kantor Pusat Bank": "var(--gold)",
-  "KKP Dikirim ke Satker": "#7A9E4A",
-  "Selesai – Diterima Satker": "var(--green)"
+  "KKP Dikirim ke Satker": "var(--green)"
 };
 const STATUS_BADGE_BG = {
   "Diajukan": "var(--grey-bg)",
@@ -395,8 +402,7 @@ const STATUS_BADGE_BG = {
   "Terverifikasi": "var(--blue-bg)",
   "Dikembalikan / Dokumen Kurang": "var(--red-bg)",
   "Dikirim ke Kantor Pusat Bank": "var(--amber-bg)",
-  "KKP Dikirim ke Satker": "var(--green-bg)",
-  "Selesai – Diterima Satker": "var(--green-bg)"
+  "KKP Dikirim ke Satker": "var(--green-bg)"
 };
 
 let RAW = [];        // all parsed application rows across banks
@@ -437,9 +443,13 @@ function computeStatus(cols){
   const nama = (cols[5]||"").trim();
   if(!nama) return null; // empty template slot, not a real application
 
-  const diterima = isTrue(cols[21]);
-  const dikirimSatker = isTrue(cols[20]);
-  const tglKirimBank = (cols[18]||"").trim();
+  // Struktur kolom terbaru (setelah kolom "Tanggal Penolakan Berkas" ditambahkan):
+  // 15 Hasil Verifikasi | 16 Daftar Dokumen Kurang | 17 Catatan/Alasan Pengembalian
+  // 18 Tanggal Penolakan Berkas (Apabila ditolak) | 19 Tanggal Pengiriman Berkas ke Kantor Pusat Bank
+  // 20 Tanggal Pengiriman KKP ke Satker | 21 KKP Dikirimkan ke Satker
+  const dikirimSatker = isTrue(cols[21]);
+  const tglKirimBank = (cols[19]||"").trim();
+  const tglTolak = (cols[18]||"").trim();
   const catatan = (cols[17]||"").trim();
   const dokKurang = (cols[16]||"").trim();
   const hasilVerif = (cols[15]||"").trim();
@@ -450,10 +460,9 @@ function computeStatus(cols){
     return v && v.toUpperCase() !== "FALSE";
   });
 
-  if(diterima) return "Selesai – Diterima Satker";
   if(dikirimSatker) return "KKP Dikirim ke Satker";
   if(tglKirimBank) return "Dikirim ke Kantor Pusat Bank";
-  if(dokKurang || catatan) return "Dikembalikan / Dokumen Kurang";
+  if(tglTolak || dokKurang || catatan) return "Dikembalikan / Dokumen Kurang";
   if(hasilVerif) return "Terverifikasi";
   if(checklistOn) return "Proses Verifikasi Berkas";
   if(noSurat) return "Berkas Diterima";
@@ -484,8 +493,9 @@ async function fetchBank(sheetName){
       noSurat: (cols[6]||"").trim(),
       status,
       tglTerimaBerkas: (cols[7]||"").trim(),
-      tglKirimBank: (cols[18]||"").trim(),
-      tglKirimSatker: (cols[19]||"").trim(),
+      tglTolak: (cols[18]||"").trim(),
+      tglKirimBank: (cols[19]||"").trim(),
+      tglKirimSatker: (cols[20]||"").trim(),
       catatan: (cols[17]||cols[16]||"").trim()
     });
   }
@@ -553,7 +563,7 @@ function populateFilterOptions(){
   kppnSel.innerHTML = '<option value="">Semua KPPN</option>' + kppnSet.map(k=>`<option value="${k}">${k}</option>`).join("");
   kppnSel.value = curKppn;
 
-  statusSel.innerHTML = '<option value="">Semua Status</option>' + STATUS_ORDER.map(s=>`<option value="${s}">${s}</option>`).join("");
+  statusSel.innerHTML = '<option value="">Semua Status</option>' + STATUS_FILTER_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join("");
   statusSel.value = curStatus;
 }
 
@@ -583,7 +593,7 @@ function render(){
 
 function renderKpis(data){
   const total = data.length;
-  const selesai = data.filter(r=>r.status==="Selesai – Diterima Satker").length;
+  const selesai = data.filter(r=>r.status==="KKP Dikirim ke Satker").length;
   const kurang = data.filter(r=>r.status==="Dikembalikan / Dokumen Kurang").length;
   const proses = total - selesai - kurang;
   const kppnCount = new Set(data.map(r=>r.kppn)).size;
@@ -674,7 +684,7 @@ function renderBankRows(){
       if(q && !(r.satker.toLowerCase().includes(q) || r.nama.toLowerCase().includes(q))) return false;
       return true;
     });
-    const done = rows.filter(r=>r.status==="Selesai – Diterima Satker").length;
+    const done = rows.filter(r=>r.status==="KKP Dikirim ke Satker").length;
     const div = document.createElement("div");
     div.className = "bank-row";
     const widthPct = Math.round((rows.length/maxCount)*100);
@@ -689,9 +699,11 @@ function renderBankRows(){
 function getStatusDate(r){
   // Tanggal yang relevan mengikuti status saat ini:
   // - Berkas Diterima -> tanggal terima berkas permohonan
+  // - Dikembalikan / Dokumen Kurang -> tanggal penolakan berkas
   // - Dikirim ke Kantor Pusat Bank -> tanggal pengiriman berkas ke bank pusat
   // - KKP Dikirim ke Satker -> tanggal pengiriman KKP ke satker
   if(r.status === "Berkas Diterima") return r.tglTerimaBerkas;
+  if(r.status === "Dikembalikan / Dokumen Kurang") return r.tglTolak;
   if(r.status === "Dikirim ke Kantor Pusat Bank") return r.tglKirimBank;
   if(r.status === "KKP Dikirim ke Satker") return r.tglKirimSatker;
   return "";
