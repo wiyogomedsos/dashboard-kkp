@@ -1,0 +1,9 @@
+{
+  "name": "dashboard-kkp-jatim",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard tracking pembuatan kartu fisik KKP dengan akses per-bank via Netlify Identity",
+  "dependencies": {
+    "@netlify/identity": "^1.2.0"
+  }
+}
