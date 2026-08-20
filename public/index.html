@@ -331,11 +331,12 @@
               <th>Pemegang KKP</th>
               <th>No. Surat</th>
               <th>Status</th>
+              <th>Tanggal</th>
               <th>Catatan</th>
             </tr>
           </thead>
           <tbody id="tblBody">
-            <tr><td colspan="7"><div class="loading-row"><div class="spinner"></div>Memuat data dari sumber…</div></td></tr>
+            <tr><td colspan="8"><div class="loading-row"><div class="spinner"></div>Memuat data dari sumber…</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -482,6 +483,9 @@ async function fetchBank(sheetName){
       nama: (cols[5]||"").trim(),
       noSurat: (cols[6]||"").trim(),
       status,
+      tglTerimaBerkas: (cols[7]||"").trim(),
+      tglKirimBank: (cols[18]||"").trim(),
+      tglKirimSatker: (cols[19]||"").trim(),
       catatan: (cols[17]||cols[16]||"").trim()
     });
   }
@@ -682,10 +686,21 @@ function renderBankRows(){
   });
 }
 
+function getStatusDate(r){
+  // Tanggal yang relevan mengikuti status saat ini:
+  // - Berkas Diterima -> tanggal terima berkas permohonan
+  // - Dikirim ke Kantor Pusat Bank -> tanggal pengiriman berkas ke bank pusat
+  // - KKP Dikirim ke Satker -> tanggal pengiriman KKP ke satker
+  if(r.status === "Berkas Diterima") return r.tglTerimaBerkas;
+  if(r.status === "Dikirim ke Kantor Pusat Bank") return r.tglKirimBank;
+  if(r.status === "KKP Dikirim ke Satker") return r.tglKirimSatker;
+  return "";
+}
+
 function renderTable(data){
   const tbody = document.getElementById("tblBody");
   if(data.length === 0){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Tidak ada pengajuan yang cocok dengan filter saat ini.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">Tidak ada pengajuan yang cocok dengan filter saat ini.</td></tr>`;
     return;
   }
   const sorted = [...data].sort((a,b)=> a.bank.localeCompare(b.bank) || a.kppn.localeCompare(b.kppn) || a.satker.localeCompare(b.satker));
@@ -697,6 +712,7 @@ function renderTable(data){
       <td>${r.nama}</td>
       <td class="mono">${r.noSurat || "—"}</td>
       <td><span class="badge" style="background:${STATUS_BADGE_BG[r.status]}; color:${STATUS_COLOR[r.status]}">${r.status}</span></td>
+      <td class="mono">${getStatusDate(r) || "—"}</td>
       <td>${r.catatan ? r.catatan : "—"}</td>
     </tr>
   `).join("");
