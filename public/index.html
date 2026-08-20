@@ -796,7 +796,11 @@ document.getElementById("loginBtn").addEventListener("click", async ()=>{
   try{
     statusEl.style.color = "var(--ink-soft)";
     statusEl.textContent = "Memverifikasi…";
-    const user = await login(email, pass);
+    const loggedInUser = await login(email, pass);
+    // login() dari @netlify/identity kadang mengembalikan objek tanpa
+    // app_metadata terisi. getUser() membaca ulang dari token yang baru
+    // saja disimpan, dan lebih bisa diandalkan untuk membaca roles.
+    const user = (await getUser()) || loggedInUser;
     statusEl.textContent = "";
     await startApp(user);
   }catch(err){
@@ -854,6 +858,8 @@ document.getElementById("setPassBtn").addEventListener("click", async ()=>{
     } else {
       user = await acceptInvite(pendingToken, p1);
     }
+    // sama seperti login biasa: pastikan app_metadata/roles terbaca lengkap
+    user = (await getUser()) || user;
     statusEl.textContent = "";
     // bersihkan token dari URL supaya tidak terpakai ulang kalau reload
     history.replaceState(null, "", window.location.pathname);
