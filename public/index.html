@@ -210,7 +210,7 @@
     <h2 class="serif" style="margin:0 0 4px; font-size:19px; color:var(--navy-950);">Masuk ke Dashboard KKP</h2>
     <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;">Gunakan akun yang sudah didaftarkan oleh admin (Invite Only).</p>
 
-    <div style="display:flex; flex-direction:column; gap:10px;">
+    <div id="loginModeBox" style="display:flex; flex-direction:column; gap:10px;">
       <input id="loginEmail" type="email" placeholder="Email" autocomplete="username"
         style="padding:10px 12px; border:1px solid var(--line); border-radius:4px; font-family:'IBM Plex Sans',sans-serif; font-size:13.5px;">
       <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password"
@@ -221,6 +221,23 @@
         Masuk
       </button>
       <div id="loginStatus" style="font-size:12px; min-height:16px; color:var(--red);"></div>
+    </div>
+
+    <!-- Muncul otomatis kalau halaman dibuka lewat link undangan / reset password -->
+    <div id="inviteModeBox" style="display:none; flex-direction:column; gap:10px;">
+      <p id="inviteHint" style="font-size:12.5px; color:var(--ink-soft); margin:0 0 4px;">
+        Selamat datang! Buat password untuk akun Anda.
+      </p>
+      <input id="newPass1" type="password" placeholder="Password baru" autocomplete="new-password"
+        style="padding:10px 12px; border:1px solid var(--line); border-radius:4px; font-family:'IBM Plex Sans',sans-serif; font-size:13.5px;">
+      <input id="newPass2" type="password" placeholder="Ulangi password baru" autocomplete="new-password"
+        style="padding:10px 12px; border:1px solid var(--line); border-radius:4px; font-family:'IBM Plex Sans',sans-serif; font-size:13.5px;">
+      <button id="setPassBtn" style="
+        padding:11px; border:none; border-radius:4px; background:var(--navy-950); color:#fff;
+        font-weight:600; font-size:13.5px; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;">
+        Buat Password &amp; Masuk
+      </button>
+      <div id="inviteStatus" style="font-size:12px; min-height:16px; color:var(--red);"></div>
     </div>
   </div>
 </div>
@@ -330,7 +347,7 @@
 </div><!-- /#appRoot -->
 
 <script type="module">
-import { login, getUser, logout } from 'https://esm.sh/@netlify/identity@1';
+import { login, getUser, logout, handleAuthCallback, acceptInvite, recoverPassword } from 'https://esm.sh/@netlify/identity@1';
 
 // Peta role -> nama tab bank. HARUS sama persis dengan nama tab & dengan
 // ROLE_TO_BANK di netlify/functions/get-bank-data.mts
@@ -795,9 +812,79 @@ document.getElementById("logoutBtn").addEventListener("click", async ()=>{
   showLoginOverlay();
 });
 
+// ===== Mode "buat password" (dari link undangan / reset password) =====
+let pendingToken = null;   // token dari URL (invite_token / recovery_token)
+let pendingMode = null;    // "invite" | "recovery"
+
+function showInviteForm(mode){
+  pendingMode = mode;
+  document.getElementById("loginModeBox").style.display = "none";
+  document.getElementById("inviteModeBox").style.display = "flex";
+  document.getElementById("inviteHint").textContent =
+    mode === "recovery"
+      ? "Buat password baru untuk akun Anda."
+      : "Selamat datang! Buat password untuk akun Anda.";
+}
+
+document.getElementById("setPassBtn").addEventListener("click", async ()=>{
+  const p1 = document.getElementById("newPass1").value;
+  const p2 = document.getElementById("newPass2").value;
+  const statusEl = document.getElementById("inviteStatus");
+  statusEl.style.color = "var(--red)";
+  statusEl.textContent = "";
+
+  if(!p1 || p1.length < 6){
+    statusEl.textContent = "Password minimal 6 karakter.";
+    return;
+  }
+  if(p1 !== p2){
+    statusEl.textContent = "Password tidak sama, coba lagi.";
+    return;
+  }
+
+  try{
+    statusEl.style.color = "var(--ink-soft)";
+    statusEl.textContent = "Menyimpan…";
+    let user;
+    if(pendingMode === "recovery"){
+      user = await recoverPassword(pendingToken, p1);
+    } else {
+      user = await acceptInvite(pendingToken, p1);
+    }
+    statusEl.textContent = "";
+    // bersihkan token dari URL supaya tidak terpakai ulang kalau reload
+    history.replaceState(null, "", window.location.pathname);
+    document.getElementById("inviteModeBox").style.display = "none";
+    document.getElementById("loginModeBox").style.display = "flex";
+    await startApp(user);
+  }catch(err){
+    statusEl.style.color = "var(--red)";
+    statusEl.textContent = "Gagal menyimpan: " + (err.message || "coba lagi.");
+  }
+});
+
 (async function initAuth(){
   try{
-    const user = await getUser(); // baca cookie nf_jwt, null kalau belum login
+    // 1. Cek dulu apakah halaman ini dibuka lewat link undangan/reset/konfirmasi
+    const callback = await handleAuthCallback();
+    if(callback && callback.type === "invite" && callback.token){
+      pendingToken = callback.token;
+      showInviteForm("invite");
+      return;
+    }
+    if(callback && callback.type === "recovery" && callback.token){
+      pendingToken = callback.token;
+      showInviteForm("recovery");
+      return;
+    }
+    if(callback && callback.user){
+      // tipe callback lain (mis. konfirmasi signup) yang langsung menghasilkan sesi login
+      await startApp(callback.user);
+      return;
+    }
+
+    // 2. Bukan link callback -> cek sesi login biasa (cookie nf_jwt)
+    const user = await getUser();
     if(user){
       await startApp(user);
     } else {
